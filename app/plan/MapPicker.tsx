@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { planMeeting, type LatLng } from "@/lib/midpoint";
 import { getUser, getPlans, savePlan, type SavedPlan } from "@/lib/auth";
 import { captureEvent } from "@/lib/analytics";
+import { geocode } from "@/lib/geocode";
 
 const BBOX = {
   minLat: 12.89,
@@ -74,6 +75,10 @@ export default function MapPicker() {
   const [copied, setCopied] = useState(false);
   const [user, setUserLocal] = useState<string | null>(null);
   const [myPlans, setMyPlans] = useState<SavedPlan[]>([]);
+  // Per-friend address input state: {value, status}
+  const [addrInputs, setAddrInputs] = useState<
+    { value: string; status: "idle" | "loading" | "error" }[]
+  >(() => FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const })));
   const ref = useRef<HTMLDivElement>(null);
 
   // Load user + plans on mount and whenever inviteUrl changes
@@ -103,6 +108,42 @@ export default function MapPicker() {
     setPins((prev) => [...prev, { lat, lng, name: FRIEND_NAMES[prev.length] }]);
   }
 
+  // Friend already has a pin?
+  function hasPin(friendName: string) {
+    return pins.some((p) => p.name === friendName);
+  }
+
+  async function handleAddressSubmit(friendIdx: number) {
+    if (result) return;
+    const value = addrInputs[friendIdx]?.value.trim();
+    if (!value) return;
+    const friendName = FRIEND_NAMES[friendIdx];
+    // If this friend already has a pin, replace it
+    setAddrInputs((prev) => {
+      const next = [...prev];
+      next[friendIdx] = { ...next[friendIdx], status: "loading" };
+      return next;
+    });
+    const hit = await geocode(value);
+    if (!hit) {
+      setAddrInputs((prev) => {
+        const next = [...prev];
+        next[friendIdx] = { ...next[friendIdx], status: "error" };
+        return next;
+      });
+      return;
+    }
+    setPins((prev) => {
+      const without = prev.filter((p) => p.name !== friendName);
+      return [...without, { lat: hit.lat, lng: hit.lng, name: friendName }];
+    });
+    setAddrInputs((prev) => {
+      const next = [...prev];
+      next[friendIdx] = { value: hit.displayName.split(",")[0], status: "idle" };
+      return next;
+    });
+  }
+
   function handleFind() {
     if (pins.length < 2) return;
     const r = planMeeting(pins);
@@ -121,6 +162,9 @@ export default function MapPicker() {
     setShowConfirm(false);
     setInviteUrl(null);
     setCopied(false);
+    setAddrInputs(
+      FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const }))
+    );
   }
 
   function handleCreateInvite() {
@@ -252,9 +296,9 @@ export default function MapPicker() {
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div className="text-sm text-[var(--muted)]">
           {pins.length === 0 && !result
-            ? "Click anywhere on the map to drop a pin for each friend — or try an example."
+            ? "Type an address for each friend, or click the map directly. You can also try an example."
             : pins.length < 4 && !result
-              ? `Click the map to add ${FRIEND_NAMES[pins.length]}'s location (${pins.length}/4)`
+              ? `${pins.length}/4 friends placed. Add ${FRIEND_NAMES[pins.length]} above or by clicking the map.`
               : result
                 ? "Meeting spot found"
                 : "4 locations added. Ready to find the meeting spot."}
@@ -284,6 +328,64 @@ export default function MapPicker() {
           </button>
         </div>
       </div>
+
+      {/* Address inputs — hide once a result is shown */}
+      {!result && (
+        <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          {FRIEND_NAMES.map((name, i) => {
+            const hp = hasPin(name);
+            const st = addrInputs[i];
+            return (
+              <div
+                key={name}
+                className={`flex items-center gap-2 rounded-xl border px-3 py-2 bg-[var(--card)] transition ${
+                  hp
+                    ? "border-[var(--accent)]"
+                    : st.status === "error"
+                      ? "border-red-400"
+                      : "border-[var(--border)]"
+                }`}
+              >
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider w-16 shrink-0 ${
+                    hp ? "text-[var(--accent)]" : "text-[var(--muted)]"
+                  }`}
+                >
+                  {hp ? "✓ " : ""}
+                  {name}
+                </span>
+                <input
+                  type="text"
+                  value={st.value}
+                  onChange={(e) =>
+                    setAddrInputs((prev) => {
+                      const next = [...prev];
+                      next[i] = { value: e.target.value, status: "idle" };
+                      return next;
+                    })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddressSubmit(i);
+                  }}
+                  placeholder="Indiranagar, Koramangala…"
+                  disabled={st.status === "loading"}
+                  className="flex-1 min-w-0 bg-transparent text-sm focus:outline-none disabled:opacity-50"
+                />
+                {st.status === "loading" && (
+                  <span className="text-[10px] text-[var(--muted)] shrink-0">
+                    …
+                  </span>
+                )}
+                {st.status === "error" && (
+                  <span className="text-[10px] text-red-500 shrink-0">
+                    not found
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Main row: map animates from full-width → left, cards fade in from right */}
       <div className="flex flex-col md:flex-row gap-6 items-stretch">
