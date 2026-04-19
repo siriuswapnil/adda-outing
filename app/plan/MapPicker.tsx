@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { planMeeting, type LatLng } from "@/lib/midpoint";
+import { getUser, getPlans, savePlan, type SavedPlan } from "@/lib/auth";
 
 const BBOX = {
   minLat: 12.89,
@@ -70,7 +71,16 @@ export default function MapPicker() {
   const [meetTime, setMeetTime] = useState("19:00");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [user, setUserLocal] = useState<string | null>(null);
+  const [myPlans, setMyPlans] = useState<SavedPlan[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Load user + plans on mount and whenever inviteUrl changes
+  useEffect(() => {
+    const u = getUser();
+    setUserLocal(u);
+    if (u) setMyPlans(getPlans(u));
+  }, [inviteUrl]);
 
   const tiles: { x: number; y: number; url: string }[] = [];
   for (let ty = tileYMin; ty <= tileYMax; ty++) {
@@ -109,6 +119,7 @@ export default function MapPicker() {
   function handleCreateInvite() {
     if (selectedIdx === null || !result) return;
     const cafe = result.suggestions[selectedIdx].cafe;
+    const currentUser = getUser();
     const params = new URLSearchParams({
       cafe: cafe.name,
       hood: cafe.neighborhood,
@@ -117,11 +128,26 @@ export default function MapPicker() {
       date: meetDate,
       time: meetTime,
       group: groupName,
-      host: pins[0]?.name || "A friend",
+      host: currentUser || pins[0]?.name || "A friend",
       friends: String(pins.length),
     });
     const url = `${window.location.origin}/invite?${params.toString()}`;
     setInviteUrl(url);
+
+    // Persist if signed in
+    if (currentUser) {
+      savePlan(currentUser, {
+        id: `${Date.now()}`,
+        cafe: cafe.name,
+        hood: cafe.neighborhood,
+        photo: cafe.photo,
+        date: meetDate,
+        time: meetTime,
+        group: groupName,
+        inviteUrl: url,
+        createdAt: Date.now(),
+      });
+    }
   }
 
   async function copyInvite() {
@@ -165,6 +191,49 @@ export default function MapPicker() {
         result ? "max-w-[1400px]" : "max-w-5xl"
       }`}
     >
+      {/* My plans — visible when signed in + has plans + no active flow */}
+      {user && myPlans.length > 0 && !result && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
+              Your plans · {myPlans.length}
+            </p>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {myPlans.map((p) => (
+              <a
+                key={p.id}
+                href={p.inviteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 w-56 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden hover:border-[var(--accent)] transition"
+              >
+                <div className="relative aspect-[16/9] bg-[var(--background)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.photo}
+                    alt={p.cafe}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-3">
+                  <p className="font-[family-name:var(--font-serif)] text-base truncate leading-tight">
+                    {p.cafe}
+                  </p>
+                  <p className="text-[11px] text-[var(--muted)] mt-0.5 truncate">
+                    {p.hood} ·{" "}
+                    {new Date(`${p.date}T${p.time}`).toLocaleDateString(
+                      "en-GB",
+                      { day: "numeric", month: "short" }
+                    )}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Controls */}
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div className="text-sm text-[var(--muted)]">
