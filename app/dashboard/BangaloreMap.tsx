@@ -43,10 +43,9 @@ function project(lat: number, lng: number) {
   return { x: (px / GRID_W) * 100, y: (py / GRID_H) * 100 };
 }
 
-// Stadia "stamen watercolor" — no key needed for their public demo.
-// If this ever fails, fallback to the CartoDB positron tiles below.
+// OpenStreetMap standard tiles — no key needed
 function tileUrl(x: number, y: number, z: number) {
-  return `https://tiles.stadiamaps.com/tiles/stamen_watercolor/${z}/${x}/${y}.jpg`;
+  return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
 }
 
 export default function BangaloreMap() {
