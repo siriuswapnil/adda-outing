@@ -11,40 +11,46 @@ export type GeocodeResult = {
 const VIEWBOX = "77.40,13.20,77.90,12.70";
 
 export async function geocode(query: string): Promise<GeocodeResult | null> {
-  if (!query.trim()) return null;
+  const results = await searchGeocode(query, 1);
+  return results[0] ?? null;
+}
+
+export async function searchGeocode(
+  query: string,
+  limit = 5,
+  signal?: AbortSignal
+): Promise<GeocodeResult[]> {
+  if (!query.trim()) return [];
   const biased = `${query}, Bangalore`;
   const url =
     `https://nominatim.openstreetmap.org/search?` +
     new URLSearchParams({
       q: biased,
       format: "json",
-      limit: "1",
+      limit: String(limit),
       viewbox: VIEWBOX,
       bounded: "1",
       countrycodes: "in",
+      addressdetails: "0",
     }).toString();
 
   try {
     const res = await fetch(url, {
-      headers: {
-        // Nominatim ToS requires a UA; browsers set this automatically
-        Accept: "application/json",
-      },
+      headers: { Accept: "application/json" },
+      signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) return [];
     const data = (await res.json()) as Array<{
       lat: string;
       lon: string;
       display_name: string;
     }>;
-    if (!data.length) return null;
-    const hit = data[0];
-    return {
+    return data.map((hit) => ({
       lat: parseFloat(hit.lat),
       lng: parseFloat(hit.lon),
       displayName: hit.display_name,
-    };
+    }));
   } catch {
-    return null;
+    return [];
   }
 }

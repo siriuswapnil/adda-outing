@@ -6,8 +6,11 @@ import { getUser, getPlans, savePlan, type SavedPlan } from "@/lib/auth";
 import { captureEvent } from "@/lib/analytics";
 import { geocode } from "@/lib/geocode";
 import LiveMap from "./LiveMap";
+import AddressAutocomplete from "./AddressAutocomplete";
 
-const DEFAULT_FRIEND_NAMES = ["Aarav", "Diya", "Kabir", "Meera"];
+// Used only for the "Try an example" button
+const EXAMPLE_FRIEND_NAMES = ["Aarav", "Diya", "Kabir", "Meera"];
+const MAX_FRIENDS = 4;
 
 type Pin = { lat: number; lng: number; name: string };
 
@@ -28,12 +31,14 @@ export default function MapPicker() {
   const [copied, setCopied] = useState(false);
   const [user, setUserLocal] = useState<string | null>(null);
   const [myPlans, setMyPlans] = useState<SavedPlan[]>([]);
-  // Editable friend names (defaults to preset)
-  const [friendNames, setFriendNames] = useState<string[]>(DEFAULT_FRIEND_NAMES);
+  // Friend names — start empty, user adds them
+  const [friendNames, setFriendNames] = useState<string[]>([]);
   // Per-friend address input state: {value, status}
   const [addrInputs, setAddrInputs] = useState<
     { value: string; status: "idle" | "loading" | "error" }[]
-  >(() => DEFAULT_FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const })));
+  >([]);
+  // Input for adding a new friend
+  const [newFriend, setNewFriend] = useState("");
 
 
   // Load user + plans on mount and whenever inviteUrl changes
@@ -46,6 +51,26 @@ export default function MapPicker() {
   // Friend already has a pin?
   function hasPin(friendName: string) {
     return pins.some((p) => p.name === friendName);
+  }
+
+  function handleAddFriend() {
+    const name = newFriend.trim();
+    if (!name) return;
+    if (friendNames.length >= MAX_FRIENDS) return;
+    if (friendNames.some((n) => n.toLowerCase() === name.toLowerCase())) {
+      setNewFriend("");
+      return;
+    }
+    setFriendNames((prev) => [...prev, name]);
+    setAddrInputs((prev) => [...prev, { value: "", status: "idle" as const }]);
+    setNewFriend("");
+  }
+
+  function handleRemoveFriend(idx: number) {
+    const removedName = friendNames[idx];
+    setFriendNames((prev) => prev.filter((_, i) => i !== idx));
+    setAddrInputs((prev) => prev.filter((_, i) => i !== idx));
+    setPins((prev) => prev.filter((p) => p.name !== removedName));
   }
 
   async function handleAddressSubmit(friendIdx: number) {
@@ -97,10 +122,9 @@ export default function MapPicker() {
     setShowConfirm(false);
     setInviteUrl(null);
     setCopied(false);
-    setAddrInputs(
-      DEFAULT_FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const }))
-    );
-    setFriendNames(DEFAULT_FRIEND_NAMES);
+    setAddrInputs([]);
+    setFriendNames([]);
+    setNewFriend("");
   }
 
   function handleCreateInvite() {
@@ -164,9 +188,11 @@ export default function MapPicker() {
   ];
 
   function handleTryExample() {
-    setFriendNames(DEFAULT_FRIEND_NAMES);
+    setFriendNames(EXAMPLE_FRIEND_NAMES);
+    setAddrInputs(
+      EXAMPLE_FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const }))
+    );
     setPins(EXAMPLE_PINS);
-    // Auto-run Find after a short delay so the pins visually drop first
     setTimeout(() => {
       setResult(planMeeting(EXAMPLE_PINS));
     }, 450);
@@ -224,13 +250,15 @@ export default function MapPicker() {
       {/* Controls */}
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div className="text-sm text-[var(--muted)]">
-          {pins.length === 0 && !result
-            ? "Type an address for each friend, or click the map directly. You can also try an example."
-            : pins.length < 4 && !result
-              ? `${pins.length}/4 friends placed. Add ${friendNames[pins.length] || "the next friend"} above or by clicking the map.`
-              : result
-                ? "Meeting spot found"
-                : "4 locations added. Ready to find the meeting spot."}
+          {friendNames.length === 0 && !result
+            ? "Add 2–4 friends above to start planning. Or hit 'Try an example'."
+            : pins.length === 0 && !result
+              ? "Type an address for each friend, or click the map directly."
+              : pins.length < friendNames.length && !result
+                ? `${pins.length}/${friendNames.length} friends placed. Add ${friendNames[pins.length] || "the next friend"}'s location.`
+                : result
+                  ? "Meeting spot found"
+                  : `${friendNames.length} locations added. Ready to find the meeting spot.`}
         </div>
         <div className="flex gap-2">
           {pins.length === 0 && !result && (
@@ -258,6 +286,56 @@ export default function MapPicker() {
         </div>
       </div>
 
+      {/* Friends section — add/remove */}
+      {!result && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
+              Friends · {friendNames.length}/{MAX_FRIENDS}
+            </p>
+            <p className="text-[10px] text-[var(--muted)]">
+              Add up to {MAX_FRIENDS}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {friendNames.map((name, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1 rounded-full bg-[var(--card)] border border-[var(--border)] pl-3 pr-1 py-1"
+              >
+                <span className="text-xs font-medium">{name}</span>
+                <button
+                  onClick={() => handleRemoveFriend(i)}
+                  className="w-5 h-5 rounded-full text-[var(--muted)] hover:bg-[var(--border)]/50 hover:text-[var(--foreground)] text-sm flex items-center justify-center"
+                  title="Remove"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {friendNames.length < MAX_FRIENDS && (
+              <div className="flex items-center gap-1 rounded-full border border-dashed border-[var(--border)] pl-3 pr-1 py-1">
+                <input
+                  type="text"
+                  value={newFriend}
+                  onChange={(e) => setNewFriend(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddFriend()}
+                  placeholder="Add a friend"
+                  className="w-28 bg-transparent text-xs focus:outline-none"
+                />
+                <button
+                  onClick={handleAddFriend}
+                  disabled={!newFriend.trim()}
+                  className="w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm flex items-center justify-center disabled:opacity-30"
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Address inputs — hide once a result is shown */}
       {!result && (
         <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -275,54 +353,40 @@ export default function MapPicker() {
                       : "border-[var(--border)]"
                 }`}
               >
-                {hp && (
-                  <span className="text-[var(--accent)] shrink-0 text-xs font-bold">
-                    ✓
-                  </span>
-                )}
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    const newName = e.target.value;
-                    setFriendNames((prev) => {
-                      const next = [...prev];
-                      next[i] = newName;
-                      return next;
-                    });
-                    // Also rename any existing pin for this friend
-                    setPins((prev) =>
-                      prev.map((p) => (p.name === name ? { ...p, name: newName } : p))
-                    );
-                  }}
-                  placeholder="Friend name"
-                  className={`w-20 shrink-0 bg-transparent text-[10px] font-bold uppercase tracking-wider focus:outline-none ${
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider w-20 shrink-0 truncate ${
                     hp ? "text-[var(--accent)]" : "text-[var(--muted)]"
                   }`}
-                />
-                <input
-                  type="text"
-                  value={st.value}
-                  onChange={(e) =>
+                >
+                  {hp ? "✓ " : ""}
+                  {name}
+                </span>
+                <AddressAutocomplete
+                  value={st?.value ?? ""}
+                  onChange={(v) =>
                     setAddrInputs((prev) => {
                       const next = [...prev];
-                      next[i] = { value: e.target.value, status: "idle" };
+                      next[i] = { value: v, status: "idle" };
                       return next;
                     })
                   }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddressSubmit(i);
+                  onPick={(r) => {
+                    const primary = r.displayName.split(",")[0];
+                    const friendName = friendNames[i];
+                    setPins((prev) => {
+                      const without = prev.filter((p) => p.name !== friendName);
+                      return [...without, { lat: r.lat, lng: r.lng, name: friendName }];
+                    });
+                    setAddrInputs((prev) => {
+                      const next = [...prev];
+                      next[i] = { value: primary, status: "idle" };
+                      return next;
+                    });
                   }}
                   placeholder="Indiranagar, Koramangala…"
-                  disabled={st.status === "loading"}
-                  className="flex-1 min-w-0 bg-transparent text-sm focus:outline-none disabled:opacity-50"
+                  error={st?.status === "error"}
                 />
-                {st.status === "loading" && (
-                  <span className="text-[10px] text-[var(--muted)] shrink-0">
-                    …
-                  </span>
-                )}
-                {st.status === "error" && (
+                {st?.status === "error" && (
                   <span className="text-[10px] text-red-500 shrink-0">
                     not found
                   </span>
@@ -355,13 +419,13 @@ export default function MapPicker() {
               : []
           }
           onMapClick={(lat, lng) => {
-            if (pins.length >= 4 || result) return;
+            if (pins.length >= friendNames.length || result) return;
             setPins((prev) => [
               ...prev,
               { lat, lng, name: friendNames[prev.length] || `Friend ${prev.length + 1}` },
             ]);
           }}
-          clickEnabled={pins.length < 4 && !result}
+          clickEnabled={pins.length < friendNames.length && !result}
           resizeKey={result ? "split" : "full"}
         />
       </div>
