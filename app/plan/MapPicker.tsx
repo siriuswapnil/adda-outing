@@ -7,7 +7,7 @@ import { captureEvent } from "@/lib/analytics";
 import { geocode } from "@/lib/geocode";
 import LiveMap from "./LiveMap";
 
-const FRIEND_NAMES = ["Aarav", "Diya", "Kabir", "Meera"];
+const DEFAULT_FRIEND_NAMES = ["Aarav", "Diya", "Kabir", "Meera"];
 
 type Pin = { lat: number; lng: number; name: string };
 
@@ -28,10 +28,12 @@ export default function MapPicker() {
   const [copied, setCopied] = useState(false);
   const [user, setUserLocal] = useState<string | null>(null);
   const [myPlans, setMyPlans] = useState<SavedPlan[]>([]);
+  // Editable friend names (defaults to preset)
+  const [friendNames, setFriendNames] = useState<string[]>(DEFAULT_FRIEND_NAMES);
   // Per-friend address input state: {value, status}
   const [addrInputs, setAddrInputs] = useState<
     { value: string; status: "idle" | "loading" | "error" }[]
-  >(() => FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const })));
+  >(() => DEFAULT_FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const })));
 
 
   // Load user + plans on mount and whenever inviteUrl changes
@@ -50,7 +52,7 @@ export default function MapPicker() {
     if (result) return;
     const value = addrInputs[friendIdx]?.value.trim();
     if (!value) return;
-    const friendName = FRIEND_NAMES[friendIdx];
+    const friendName = friendNames[friendIdx];
     // If this friend already has a pin, replace it
     setAddrInputs((prev) => {
       const next = [...prev];
@@ -96,8 +98,9 @@ export default function MapPicker() {
     setInviteUrl(null);
     setCopied(false);
     setAddrInputs(
-      FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const }))
+      DEFAULT_FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const }))
     );
+    setFriendNames(DEFAULT_FRIEND_NAMES);
   }
 
   function handleCreateInvite() {
@@ -161,6 +164,7 @@ export default function MapPicker() {
   ];
 
   function handleTryExample() {
+    setFriendNames(DEFAULT_FRIEND_NAMES);
     setPins(EXAMPLE_PINS);
     // Auto-run Find after a short delay so the pins visually drop first
     setTimeout(() => {
@@ -223,7 +227,7 @@ export default function MapPicker() {
           {pins.length === 0 && !result
             ? "Type an address for each friend, or click the map directly. You can also try an example."
             : pins.length < 4 && !result
-              ? `${pins.length}/4 friends placed. Add ${FRIEND_NAMES[pins.length]} above or by clicking the map.`
+              ? `${pins.length}/4 friends placed. Add ${friendNames[pins.length] || "the next friend"} above or by clicking the map.`
               : result
                 ? "Meeting spot found"
                 : "4 locations added. Ready to find the meeting spot."}
@@ -257,12 +261,12 @@ export default function MapPicker() {
       {/* Address inputs — hide once a result is shown */}
       {!result && (
         <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          {FRIEND_NAMES.map((name, i) => {
+          {friendNames.map((name, i) => {
             const hp = hasPin(name);
             const st = addrInputs[i];
             return (
               <div
-                key={name}
+                key={i}
                 className={`flex items-center gap-2 rounded-xl border px-3 py-2 bg-[var(--card)] transition ${
                   hp
                     ? "border-[var(--accent)]"
@@ -271,14 +275,31 @@ export default function MapPicker() {
                       : "border-[var(--border)]"
                 }`}
               >
-                <span
-                  className={`text-[10px] font-bold uppercase tracking-wider w-16 shrink-0 ${
+                {hp && (
+                  <span className="text-[var(--accent)] shrink-0 text-xs font-bold">
+                    ✓
+                  </span>
+                )}
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    setFriendNames((prev) => {
+                      const next = [...prev];
+                      next[i] = newName;
+                      return next;
+                    });
+                    // Also rename any existing pin for this friend
+                    setPins((prev) =>
+                      prev.map((p) => (p.name === name ? { ...p, name: newName } : p))
+                    );
+                  }}
+                  placeholder="Friend name"
+                  className={`w-20 shrink-0 bg-transparent text-[10px] font-bold uppercase tracking-wider focus:outline-none ${
                     hp ? "text-[var(--accent)]" : "text-[var(--muted)]"
                   }`}
-                >
-                  {hp ? "✓ " : ""}
-                  {name}
-                </span>
+                />
                 <input
                   type="text"
                   value={st.value}
@@ -337,7 +358,7 @@ export default function MapPicker() {
             if (pins.length >= 4 || result) return;
             setPins((prev) => [
               ...prev,
-              { lat, lng, name: FRIEND_NAMES[prev.length] },
+              { lat, lng, name: friendNames[prev.length] || `Friend ${prev.length + 1}` },
             ]);
           }}
           clickEnabled={pins.length < 4 && !result}
