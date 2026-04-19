@@ -1,65 +1,63 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen flex flex-col">
+      {/* Top bar */}
+      <header className="px-8 py-6 flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
+          Hangout Wrapped
+        </p>
+        <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)]">
+          Bangalore
+        </p>
+      </header>
+
+      {/* Hero */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)] mb-6">
+          For friends who meet often
+        </p>
+
+        <h1 className="font-[family-name:var(--font-serif)] text-6xl md:text-8xl leading-[0.9] max-w-4xl">
+          Plan hangouts.
+          <br />
+          <em className="text-[var(--accent)]">Keep memories.</em>
+        </h1>
+
+        <p className="text-[var(--muted)] text-lg mt-8 max-w-xl leading-relaxed">
+          Find the fair meeting spot for your friend group in Bangalore — and at
+          month-end, see everywhere you went together.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-10">
+          <Link
+            href="/plan"
+            className="px-6 py-3 rounded-xl bg-[var(--accent)] text-white text-sm font-medium shadow hover:opacity-90 transition"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Plan a hangout →
+          </Link>
+          <Link
+            href="/dashboard"
+            className="px-6 py-3 rounded-xl bg-[var(--card)] border border-[var(--border)] text-sm font-medium hover:bg-[var(--border)]/30 transition"
           >
-            Documentation
-          </a>
+            See our month
+          </Link>
         </div>
-      </main>
-    </div>
+
+        <div className="mt-16 flex items-center gap-8 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+          <span>Fair midpoint</span>
+          <span className="w-1 h-1 rounded-full bg-[var(--muted)]" />
+          <span>Curated cafés</span>
+          <span className="w-1 h-1 rounded-full bg-[var(--muted)]" />
+          <span>Monthly recap</span>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="px-8 py-6 text-center text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+        Made for Bengaluru · 2026
+      </footer>
+    </main>
   );
 }

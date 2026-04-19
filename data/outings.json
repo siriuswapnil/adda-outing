@@ -1,0 +1,10 @@
+[
+  { "id": 1, "date": "2026-04-02", "cafe": "Third Wave Coffee", "neighborhood": "Indiranagar", "lat": 12.9719, "lng": 77.6412, "attendees": ["Aarav", "Diya", "Kabir", "Meera"], "photo": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600" },
+  { "id": 2, "date": "2026-04-05", "cafe": "Blue Tokai", "neighborhood": "Koramangala", "lat": 12.9352, "lng": 77.6245, "attendees": ["Aarav", "Diya", "Meera"], "photo": "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=600" },
+  { "id": 3, "date": "2026-04-08", "cafe": "Matteo Coffea", "neighborhood": "Church Street", "lat": 12.9756, "lng": 77.6068, "attendees": ["Aarav", "Kabir", "Meera"], "photo": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=600" },
+  { "id": 4, "date": "2026-04-11", "cafe": "Dyu Art Cafe", "neighborhood": "Koramangala", "lat": 12.9279, "lng": 77.6271, "attendees": ["Diya", "Kabir", "Meera"], "photo": "https://images.unsplash.com/photo-1559305616-3f99cd43e353?w=600" },
+  { "id": 5, "date": "2026-04-14", "cafe": "Cafe Thulp", "neighborhood": "HSR Layout", "lat": 12.9116, "lng": 77.6473, "attendees": ["Aarav", "Diya", "Kabir", "Meera"], "photo": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600" },
+  { "id": 6, "date": "2026-04-18", "cafe": "Subko Coffee", "neighborhood": "Indiranagar", "lat": 12.9783, "lng": 77.6408, "attendees": ["Aarav", "Meera"], "photo": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600" },
+  { "id": 7, "date": "2026-04-22", "cafe": "Araku Coffee", "neighborhood": "Lavelle Road", "lat": 12.9718, "lng": 77.5946, "attendees": ["Aarav", "Diya", "Kabir"], "photo": "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=600" },
+  { "id": 8, "date": "2026-04-26", "cafe": "Glen's Bakehouse", "neighborhood": "Indiranagar", "lat": 12.9698, "lng": 77.6414, "attendees": ["Aarav", "Diya", "Kabir", "Meera"], "photo": "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=600" }
+]
