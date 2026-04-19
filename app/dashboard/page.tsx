@@ -29,144 +29,123 @@ export default function Dashboard() {
   const vibeSummary =
     "Filter coffee mornings in Indiranagar, long conversations on Church Street, and lazy Koramangala evenings that stretched past closing time.";
 
+  // Featured photos for the collage tile (4 picks)
+  const featuredPhotos = [outings[0], outings[2], outings[4], outings[7]];
+
   return (
-    <>
-      {/* ============ HERO: ONE LANDSCAPE VIEWPORT ============ */}
-      <section className="h-screen w-screen p-3 flex flex-col overflow-hidden">
-        {/* Eyebrow */}
-        <div className="flex items-center justify-between px-2 mb-2 shrink-0">
+    <section className="h-[100dvh] w-screen p-4 flex flex-col overflow-hidden">
+      {/* Eyebrow */}
+      <div className="flex items-center justify-between px-1 mb-3 shrink-0">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
+          April 2026 · Bangalore
+        </p>
+        <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
+          Hangout Wrapped
+        </p>
+      </div>
+
+      {/* Bento — 12 col x 10 row grid */}
+      <div className="grid grid-cols-12 grid-rows-10 gap-3 flex-1 min-h-0 auto-rows-fr">
+        {/* Headline tile — top-left 5x5 */}
+        <div className="col-start-1 col-span-5 row-start-1 row-span-5 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 flex flex-col justify-between">
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
-            April 2026 · Bangalore
+            A recap
           </p>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
-            Hangout Wrapped
+          <h1 className="font-[family-name:var(--font-serif)] leading-[0.88] text-[clamp(2.75rem,5.5vw,5.5rem)]">
+            Your month,
+            <br />
+            <em className="text-[var(--accent)]">wrapped.</em>
+          </h1>
+          <p className="text-xs text-[var(--muted)]">
+            A love letter to {friends.length} friends and{" "}
+            {outings.length} cafés.
           </p>
         </div>
 
-        {/* Bento fills the rest */}
-        <div className="grid grid-cols-12 grid-rows-6 gap-2 flex-1 min-h-0">
-          {/* Headline — top-left */}
-          <div className="col-span-7 row-span-3 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-6 py-4 flex flex-col justify-center">
-            <h1 className="font-[family-name:var(--font-serif)] leading-[0.88] text-[clamp(2.5rem,6.5vw,6.5rem)] text-[var(--foreground)]">
-              Your month,
-              <br />
-              <em className="text-[var(--accent)]">wrapped.</em>
-            </h1>
-          </div>
-
-          {/* Map — full right column */}
-          <div className="col-span-5 row-span-6 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-2 flex flex-col min-h-0">
-            <div className="flex-1 min-h-0">
-              <BangaloreMap />
-            </div>
-          </div>
-
-          {/* Outings stat */}
-          <div className="col-span-2 row-span-2 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-3 flex flex-col justify-between">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)]">
-              Outings
+        {/* Map tile — top-right 7x6 (cols 6-12, rows 1-6) */}
+        <div className="col-start-6 col-span-7 row-start-1 row-span-6 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-3 flex flex-col min-h-0">
+          <div className="flex items-center justify-between px-2 pb-2 shrink-0">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
+              Where you went
             </p>
-            <div className="font-[family-name:var(--font-serif)] text-[clamp(2rem,5vw,4.5rem)] leading-none">
-              {outings.length}
-            </div>
-          </div>
-
-          {/* Friends stat */}
-          <div className="col-span-2 row-span-2 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-3 flex flex-col justify-between">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)]">
-              Friends
-            </p>
-            <div className="font-[family-name:var(--font-serif)] text-[clamp(2rem,5vw,4.5rem)] leading-none">
-              {friends.length}
-            </div>
-          </div>
-
-          {/* Km stat — accent */}
-          <div className="col-span-3 row-span-2 bg-[var(--accent)] text-white rounded-2xl px-4 py-3 flex flex-col justify-between">
-            <p className="text-[9px] uppercase tracking-[0.2em] opacity-80">
-              Traveled together
-            </p>
-            <div className="font-[family-name:var(--font-serif)] text-[clamp(2rem,5vw,4.5rem)] leading-none">
-              {Math.round(totalKm)}
-              <span className="text-base align-baseline ml-1">km</span>
-            </div>
-          </div>
-
-          {/* Superlative — Top Spot */}
-          <div className="col-span-4 row-span-1 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-2 flex items-center justify-between gap-3">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)] shrink-0">
-              Top spot
-            </p>
-            <p className="font-[family-name:var(--font-serif)] text-[clamp(1rem,1.8vw,1.8rem)] text-[var(--accent)] leading-none text-right truncate">
-              {topNeighborhood[0]}
+            <p className="text-[10px] text-[var(--muted)]">
+              {outings.length} pins
             </p>
           </div>
-
-          {/* Vibe quote */}
-          <div className="col-span-3 row-span-1 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-2 flex items-center">
-            <p className="font-[family-name:var(--font-serif)] italic leading-tight text-[clamp(0.7rem,0.9vw,0.95rem)] text-[var(--foreground)] line-clamp-2">
-              &ldquo;{vibeSummary}&rdquo;
-            </p>
+          <div className="flex-1 min-h-0">
+            <BangaloreMap />
           </div>
         </div>
-      </section>
 
-      {/* ============ BELOW THE FOLD ============ */}
-      <section className="px-6 md:px-10 py-16 max-w-6xl mx-auto">
-        <div className="mb-16">
-          <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)] mb-6">
+        {/* Outings stat — row 6-7, col 1-2 */}
+        <div className="col-start-1 col-span-2 row-start-6 row-span-2 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-3 flex flex-col gap-1">
+          <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)]">
+            Outings
+          </p>
+          <div className="font-[family-name:var(--font-serif)] text-[clamp(2rem,4.5vw,4rem)] leading-none">
+            {outings.length}
+          </div>
+        </div>
+
+        {/* Friends stat — row 6-7, col 3-4 */}
+        <div className="col-start-3 col-span-2 row-start-6 row-span-2 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-3 flex flex-col gap-1">
+          <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)]">
+            Friends
+          </p>
+          <div className="font-[family-name:var(--font-serif)] text-[clamp(2rem,4.5vw,4rem)] leading-none">
+            {friends.length}
+          </div>
+        </div>
+
+        {/* Km stat — row 6-7, col 5 */}
+        <div className="col-start-5 col-span-1 row-start-6 row-span-2 bg-[var(--accent)] text-white rounded-2xl px-3 py-3 flex flex-col gap-1">
+          <p className="text-[9px] uppercase tracking-[0.2em] opacity-80">
+            Km together
+          </p>
+          <div className="font-[family-name:var(--font-serif)] text-[clamp(1.75rem,3vw,2.5rem)] leading-none">
+            {Math.round(totalKm)}
+          </div>
+        </div>
+
+        {/* Top spot — row 8, col 1-5 */}
+        <div className="col-start-1 col-span-5 row-start-8 row-span-1 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
+            Top spot
+          </p>
+          <p className="font-[family-name:var(--font-serif)] text-[clamp(1.25rem,2vw,1.75rem)] text-[var(--accent)] leading-none truncate">
+            {topNeighborhood[0]}
+          </p>
+        </div>
+
+        {/* Vibe quote tile — row 9-10, col 1-5 */}
+        <div className="col-start-1 col-span-5 row-start-9 row-span-2 bg-[var(--foreground)] text-[var(--card)] rounded-2xl px-5 py-4 flex flex-col justify-between gap-2">
+          <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">
+            The vibe
+          </p>
+          <p className="font-[family-name:var(--font-serif)] italic leading-tight text-[clamp(1rem,1.5vw,1.4rem)]">
+            &ldquo;{vibeSummary}&rdquo;
+          </p>
+        </div>
+
+        {/* Photo collage tile — row 7-10, col 6-12 */}
+        <div className="col-start-6 col-span-7 row-start-7 row-span-4 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-3 flex flex-col min-h-0">
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] px-1 pb-2 shrink-0">
             Moments
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {outings.map((o) => (
-              <div
-                key={o.id}
-                className="aspect-square overflow-hidden rounded-2xl bg-[var(--card)] border border-[var(--border)]"
-              >
+          <div className="grid grid-cols-4 grid-rows-2 gap-2 flex-1 min-h-0">
+            {outings.slice(0, 8).map((o) => (
+              <div key={o.id} className="relative rounded-lg overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={o.photo}
                   alt={o.cafe}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               </div>
             ))}
           </div>
         </div>
-
-        <div className="mb-16">
-          <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)] mb-6">
-            Every outing
-          </p>
-          <ul className="divide-y divide-[var(--border)]">
-            {outings.map((o) => (
-              <li
-                key={o.id}
-                className="py-5 flex items-baseline justify-between gap-6"
-              >
-                <div>
-                  <div className="font-[family-name:var(--font-serif)] text-2xl">
-                    {o.cafe}
-                  </div>
-                  <div className="text-[var(--muted)] text-sm mt-1">
-                    {o.neighborhood} · {o.attendees.length} friends
-                  </div>
-                </div>
-                <div className="text-[var(--muted)] text-sm whitespace-nowrap font-mono">
-                  {new Date(o.date).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <footer className="text-center text-sm text-[var(--muted)] pt-8 border-t border-[var(--border)]">
-          Hangout Wrapped · April 2026
-        </footer>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
