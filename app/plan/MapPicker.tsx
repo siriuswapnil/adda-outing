@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { planMeeting, type LatLng } from "@/lib/midpoint";
 import { getUser, getPlans, savePlan, type SavedPlan } from "@/lib/auth";
+import { captureEvent } from "@/lib/analytics";
 
 const BBOX = {
   minLat: 12.89,
@@ -104,7 +105,13 @@ export default function MapPicker() {
 
   function handleFind() {
     if (pins.length < 2) return;
-    setResult(planMeeting(pins));
+    const r = planMeeting(pins);
+    setResult(r);
+    captureEvent("plan_created", {
+      pin_count: pins.length,
+      top_cafe: r.suggestions[0]?.cafe.name,
+      top_hood: r.suggestions[0]?.cafe.neighborhood,
+    });
   }
 
   function handleReset() {
@@ -133,6 +140,13 @@ export default function MapPicker() {
     });
     const url = `${window.location.origin}/invite?${params.toString()}`;
     setInviteUrl(url);
+
+    captureEvent("invite_generated", {
+      cafe: cafe.name,
+      hood: cafe.neighborhood,
+      group: groupName,
+      signed_in: !!currentUser,
+    });
 
     // Persist if signed in
     if (currentUser) {

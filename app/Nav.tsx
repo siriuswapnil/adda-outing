@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getUser, setUser, signOut } from "@/lib/auth";
+import { captureEvent, identifyUser, resetUser } from "@/lib/analytics";
 
 const links = [
   { href: "/", label: "Home" },
@@ -28,9 +29,13 @@ export default function Nav() {
     setUserState(trimmed);
     setShowPrompt(false);
     setName("");
+    identifyUser(trimmed);
+    captureEvent("user_signed_in", { name: trimmed });
   }
 
   function handleSignOut() {
+    captureEvent("user_signed_out");
+    resetUser();
     signOut();
     setUserState(null);
   }
