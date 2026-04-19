@@ -1,62 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { planMeeting, type LatLng } from "@/lib/midpoint";
+import { useEffect, useState } from "react";
+import { planMeeting } from "@/lib/midpoint";
 import { getUser, getPlans, savePlan, type SavedPlan } from "@/lib/auth";
 import { captureEvent } from "@/lib/analytics";
 import { geocode } from "@/lib/geocode";
-
-const BBOX = {
-  minLat: 12.89,
-  maxLat: 13.0,
-  minLng: 77.55,
-  maxLng: 77.68,
-};
-
-function lngToTileX(lng: number, z: number) {
-  return ((lng + 180) / 360) * Math.pow(2, z);
-}
-function latToTileY(lat: number, z: number) {
-  const rad = (lat * Math.PI) / 180;
-  return (
-    ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) *
-    Math.pow(2, z)
-  );
-}
-function tileXToLng(x: number, z: number) {
-  return (x / Math.pow(2, z)) * 360 - 180;
-}
-function tileYToLat(y: number, z: number) {
-  const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
-  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
-}
-
-const ZOOM = 12;
-const TILE_SIZE = 256;
-const tileXMin = Math.floor(lngToTileX(BBOX.minLng, ZOOM));
-const tileXMax = Math.floor(lngToTileX(BBOX.maxLng, ZOOM));
-const tileYMin = Math.floor(latToTileY(BBOX.maxLat, ZOOM));
-const tileYMax = Math.floor(latToTileY(BBOX.minLat, ZOOM));
-const COLS = tileXMax - tileXMin + 1;
-const ROWS = tileYMax - tileYMin + 1;
-
-function project(lat: number, lng: number) {
-  const px =
-    (lngToTileX(lng, ZOOM) - tileXMin) / COLS;
-  const py =
-    (latToTileY(lat, ZOOM) - tileYMin) / ROWS;
-  return { x: px * 100, y: py * 100 };
-}
-
-function unproject(px: number, py: number): LatLng {
-  const tx = tileXMin + px * COLS;
-  const ty = tileYMin + py * ROWS;
-  return { lat: tileYToLat(ty, ZOOM), lng: tileXToLng(tx, ZOOM) };
-}
+import LiveMap from "./LiveMap";
 
 const FRIEND_NAMES = ["Aarav", "Diya", "Kabir", "Meera"];
 
-type Pin = LatLng & { name: string };
+type Pin = { lat: number; lng: number; name: string };
 
 export default function MapPicker() {
   const [pins, setPins] = useState<Pin[]>([]);
@@ -79,7 +32,7 @@ export default function MapPicker() {
   const [addrInputs, setAddrInputs] = useState<
     { value: string; status: "idle" | "loading" | "error" }[]
   >(() => FRIEND_NAMES.map(() => ({ value: "", status: "idle" as const })));
-  const ref = useRef<HTMLDivElement>(null);
+
 
   // Load user + plans on mount and whenever inviteUrl changes
   useEffect(() => {
@@ -87,26 +40,6 @@ export default function MapPicker() {
     setUserLocal(u);
     if (u) setMyPlans(getPlans(u));
   }, [inviteUrl]);
-
-  const tiles: { x: number; y: number; url: string }[] = [];
-  for (let ty = tileYMin; ty <= tileYMax; ty++) {
-    for (let tx = tileXMin; tx <= tileXMax; tx++) {
-      tiles.push({
-        x: tx - tileXMin,
-        y: ty - tileYMin,
-        url: `https://tile.openstreetmap.org/${ZOOM}/${tx}/${ty}.png`,
-      });
-    }
-  }
-
-  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (pins.length >= 4 || result) return;
-    const rect = ref.current!.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;
-    const py = (e.clientY - rect.top) / rect.height;
-    const { lat, lng } = unproject(px, py);
-    setPins((prev) => [...prev, { lat, lng, name: FRIEND_NAMES[prev.length] }]);
-  }
 
   // Friend already has a pin?
   function hasPin(friendName: string) {
@@ -234,14 +167,6 @@ export default function MapPicker() {
       setResult(planMeeting(EXAMPLE_PINS));
     }, 450);
   }
-
-  const midProj = result ? project(result.midpoint.lat, result.midpoint.lng) : null;
-  const suggestionProjs = result
-    ? result.suggestions.map((s) => ({
-        ...project(s.cafe.lat, s.cafe.lng),
-        name: s.cafe.name,
-      }))
-    : [];
 
   return (
     <div
@@ -391,104 +316,33 @@ export default function MapPicker() {
       <div className="flex flex-col md:flex-row gap-6 items-stretch">
       {/* Map — animated width */}
       <div
-        ref={ref}
-        onClick={handleClick}
-        className={`relative aspect-[4/3] rounded-2xl overflow-hidden cursor-crosshair border border-[var(--border)] bg-[var(--card)] transition-all duration-700 ease-in-out mx-auto ${
+        className={`relative aspect-[4/3] rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--card)] transition-all duration-700 ease-in-out mx-auto ${
           result ? "md:basis-[50%] md:max-w-none" : "md:basis-full md:max-w-3xl"
         } basis-full shrink-0 w-full`}
       >
-        {/* Tile grid */}
-        <div
-          className="absolute inset-0"
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-            gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+        <LiveMap
+          pins={pins}
+          midpoint={result ? result.midpoint : null}
+          suggestions={
+            result
+              ? result.suggestions.map((s, i) => ({
+                  lat: s.cafe.lat,
+                  lng: s.cafe.lng,
+                  name: s.cafe.name,
+                  rank: i + 1,
+                }))
+              : []
+          }
+          onMapClick={(lat, lng) => {
+            if (pins.length >= 4 || result) return;
+            setPins((prev) => [
+              ...prev,
+              { lat, lng, name: FRIEND_NAMES[prev.length] },
+            ]);
           }}
-        >
-          {tiles.map((t, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={i}
-              src={t.url}
-              alt=""
-              className="w-full h-full object-cover pointer-events-none"
-              style={{
-                gridColumnStart: t.x + 1,
-                gridRowStart: t.y + 1,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Empty-state pulsing hint dot — centered on the map */}
-        {pins.length === 0 && !result && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="relative flex flex-col items-center gap-2">
-              <span className="relative flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60" />
-                <span className="relative inline-flex h-4 w-4 rounded-full bg-[var(--accent)] border-2 border-white shadow" />
-              </span>
-              <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--foreground)] bg-[var(--card)]/90 px-2 py-1 rounded-md border border-[var(--border)]">
-                Click anywhere
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Friend pins */}
-        {pins.map((p, i) => {
-          const { x, y } = project(p.lat, p.lng);
-          return (
-            <div
-              key={i}
-              className="absolute pointer-events-none"
-              style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -100%)" }}
-            >
-              <div className="flex flex-col items-center">
-                <div className="bg-[var(--foreground)] text-white text-xs px-2 py-0.5 rounded-md whitespace-nowrap">
-                  {p.name}
-                </div>
-                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-[var(--foreground)]" />
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Midpoint marker */}
-        {midProj && (
-          <div
-            className="absolute pointer-events-none"
-            style={{ left: `${midProj.x}%`, top: `${midProj.y}%`, transform: "translate(-50%,-50%)" }}
-          >
-            <div className="w-4 h-4 rounded-full bg-white border-2 border-[var(--foreground)] shadow" />
-          </div>
-        )}
-
-        {/* Suggestion pins — ranked 1/2/3 */}
-        {suggestionProjs.map((s, i) => (
-          <div
-            key={i}
-            className="absolute pointer-events-none"
-            style={{ left: `${s.x}%`, top: `${s.y}%`, transform: "translate(-50%, -100%)" }}
-          >
-            <div className="flex flex-col items-center">
-              <div
-                className={`text-white text-xs font-medium px-3 py-1 rounded-lg whitespace-nowrap shadow flex items-center gap-1.5 ${
-                  i === 0 ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/80"
-                }`}
-              >
-                <span className="font-bold">#{i + 1}</span>
-                <span>{s.name}</span>
-              </div>
-              <div
-                className={`w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent ${
-                  i === 0 ? "border-t-[var(--accent)]" : "border-t-[var(--foreground)]/80"
-                }`}
-              />
-            </div>
-          </div>
-        ))}
+          clickEnabled={pins.length < 4 && !result}
+          resizeKey={result ? "split" : "full"}
+        />
       </div>
 
       {/* Suggestion cards — fade in from right */}
